@@ -233,6 +233,10 @@ app.post("/sensor-data", async (req, res) => {
   }
 });
 
+app.get('/health', (req, res) => {
+  res.status(200).json({ status: "healthy", message: "Server is operational" });
+}); 
+
 app.listen(PORT, () => {
   console.log(`Server is listening on port ${PORT}`);
 });
