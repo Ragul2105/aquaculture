@@ -122,18 +122,21 @@ const sendDataToFirestore = async (DO, Temp, pH, Conduct) => {
 // Helper to update the 'ponds' collection which the mobile app reads from
 const updatePondsCollection = async (DO, Temp, pH, Conduct) => {
   try {
-    await db.collection('ponds').doc(POND_ID).set({
-      Do: DO,
-      temperature: Temp,
-      pH: pH,
-      Tds: Conduct,
+    const pondData = {
+      Do: parseFloat(DO) || 0.01,
+      temperature: parseFloat(Temp) || 0.01,
+      pH: parseFloat(pH) || 0.01,
+      Tds: parseFloat(Conduct) || 0.01,
       Turbidity: 0.01,
       Nitrate: 0.01,
-      timestamp: new Date()
-    }, { merge: true });
-    console.log('Updated ponds collection for', POND_ID);
+      timestamp: new Date(),
+      lastUpdated: new Date().toISOString()
+    };
+    
+    await db.collection('ponds').doc(POND_ID).set(pondData, { merge: true });
+    console.log('✅ Updated ponds collection for', POND_ID, 'with data:', pondData);
   } catch (err) {
-    console.log('Error updating ponds collection:', err);
+    console.log('❌ Error updating ponds collection:', err);
   }
 }
 
