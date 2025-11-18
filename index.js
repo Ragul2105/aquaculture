@@ -232,7 +232,7 @@ app.post("/sensor-data", async (req, res) => {
     });
     // count++;
 
-    if (canSaveToFirestore) {
+    if (true) {
       canSaveToFirestore = false;
       await sendDataToFirestore(DO, Temp, pH, Conduct);
       console.log("Firestore data sent:",new Date().toLocaleString(undefined, {
