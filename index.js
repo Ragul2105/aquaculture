@@ -62,11 +62,17 @@ function rgen(a, b) {
 }
 
 const obtainValues = (rb) => {
-  return { 
-    DO: rb.DO,
-    Temp: 0.01, 
-    pH: rb.pH, 
-    Conduct: 0.01,
+  // Accept multiple possible key names from various sensor payloads
+  const DO = rb.DO ?? rb.Do ?? rb.do ?? null;
+  const Temp = rb.temperature ?? rb.temp ?? rb.Temp ?? rb.TempC ?? null;
+  const pH = rb.pH ?? rb.ph ?? null;
+  const Conduct = rb.conductivity ?? rb.conduct ?? rb.tds ?? rb.Conduct ?? null;
+
+  return {
+    DO: DO != null ? DO : 0.01,
+    Temp: Temp != null ? Temp : 0.01,
+    pH: pH != null ? pH : 0.01,
+    Conduct: Conduct != null ? Conduct : 0.01,
   };
 }
 
@@ -75,7 +81,6 @@ const sendDataToFirestore = async (DO, Temp, pH, Conduct) => {
 
   let newFormat = getTimestampString();
   try {
-    // Original data storage for historical data
     await db
       .collection(COLLECTION)
       .doc(EMAIL)
@@ -108,28 +113,29 @@ const sendDataToFirestore = async (DO, Temp, pH, Conduct) => {
         { merge: true }
       );
 
-    // NEW: Save data where mobile app expects it
-    await db
-      .collection("ponds")
-      .doc(POND_ID)
-      .set(
-        {
-          Do: DO,
-          temperature: Temp,
-          pH: pH,
-          Tds: Conduct,
-          Turbidity: 0.01,
-          Nitrate: 0.01,
-          timestamp: timestamp
-        },
-        { merge: true }
-      );
-
-    console.log("Data sent to Firestore and ponds collection");
+    console.log("Data sent to Firestore");
   } catch (error) {
     console.log("Error in storing: ", error);
   }
 };
+
+// Helper to update the 'ponds' collection which the mobile app reads from
+const updatePondsCollection = async (DO, Temp, pH, Conduct) => {
+  try {
+    await db.collection('ponds').doc(POND_ID).set({
+      Do: DO,
+      temperature: Temp,
+      pH: pH,
+      Tds: Conduct,
+      Turbidity: 0.01,
+      Nitrate: 0.01,
+      timestamp: new Date()
+    }, { merge: true });
+    console.log('Updated ponds collection for', POND_ID);
+  } catch (err) {
+    console.log('Error updating ponds collection:', err);
+  }
+}
 
 var canSaveToFirestore = false;
 
@@ -234,6 +240,9 @@ app.post("/sensor-data", async (req, res) => {
       }));
     }
 
+    // Always update the 'ponds' document so the mobile app sees latest values immediately
+    await updatePondsCollection(DO, Temp, pH, Conduct);
+
     console.log(
       `🚀 ${new Date().toLocaleString(undefined, {
         timeZone: "Asia/Kolkata",
@@ -250,10 +259,6 @@ app.post("/sensor-data", async (req, res) => {
     count = 0;
   }
 });
-
-app.get('/health', (req, res) => {
-  res.status(200).json({ status: "healthy", message: "Server is operational" });
-}); 
 
 app.listen(PORT, () => {
   console.log(`Server is listening on port ${PORT}`);
