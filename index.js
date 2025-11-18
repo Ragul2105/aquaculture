@@ -75,6 +75,7 @@ const sendDataToFirestore = async (DO, Temp, pH, Conduct) => {
 
   let newFormat = getTimestampString();
   try {
+    // Original data storage for historical data
     await db
       .collection(COLLECTION)
       .doc(EMAIL)
@@ -107,7 +108,24 @@ const sendDataToFirestore = async (DO, Temp, pH, Conduct) => {
         { merge: true }
       );
 
-    console.log("Data sent to Firestore");
+    // NEW: Save data where mobile app expects it
+    await db
+      .collection("ponds")
+      .doc(POND_ID)
+      .set(
+        {
+          Do: DO,
+          temperature: Temp,
+          pH: pH,
+          Tds: Conduct,
+          Turbidity: 0.01,
+          Nitrate: 0.01,
+          timestamp: timestamp
+        },
+        { merge: true }
+      );
+
+    console.log("Data sent to Firestore and ponds collection");
   } catch (error) {
     console.log("Error in storing: ", error);
   }
