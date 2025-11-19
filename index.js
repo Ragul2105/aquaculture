@@ -63,20 +63,20 @@ function rgen(a, b) {
 
 const obtainValues = (rb) => {
   // Accept multiple possible key names from various sensor payloads
-  const DO = rb.DO ?? rb.Do ?? rb.do ?? null;
+  const Do = rb.DO ?? rb.Do ?? rb.do ?? null;
   const Temp = rb.temperature ?? rb.temp ?? rb.Temp ?? rb.TempC ?? null;
   const pH = rb.pH ?? rb.ph ?? null;
   const Conduct = rb.conductivity ?? rb.conduct ?? rb.tds ?? rb.Conduct ?? null;
 
   return {
-    DO: DO != null ? DO : 0.01,
+    Do: Do != null ? Do : 0.01,
     Temp: Temp != null ? Temp : 0.01,
     pH: pH != null ? pH : 0.01,
     Conduct: Conduct != null ? Conduct : 0.01,
   };
 }
 
-const sendDataToFirestore = async (DO, Temp, pH, Conduct) => {
+const sendDataToFirestore = async (Do, Temp, pH, Conduct) => {
   const timestamp = new Date();
 
   let newFormat = getTimestampString();
@@ -89,7 +89,7 @@ const sendDataToFirestore = async (DO, Temp, pH, Conduct) => {
       .set(
         {
           [newFormat]: {
-            DO: DO,
+            Do: Do,
             TEMP: Temp,
             PH: pH,
             TDS: Conduct,
@@ -104,7 +104,7 @@ const sendDataToFirestore = async (DO, Temp, pH, Conduct) => {
       .set(
         {
           system1: {
-            DO: DO,
+            Do: Do,
             TEMP: Temp,
             PH: pH,
             TDS: Conduct,
@@ -120,15 +120,15 @@ const sendDataToFirestore = async (DO, Temp, pH, Conduct) => {
 };
 
 // Helper to update the 'ponds' collection which the mobile app reads from
-const updatePondsCollection = async (DO, Temp, pH, Conduct) => {
+const updatePondsCollection = async (Do, Temp, pH, Conduct) => {
   try {
     const pondData = {
-      Do: parseFloat(DO) || 0.01,
+      Do: parseFloat(Do) || 0.01,
       temperature: parseFloat(Temp) || 0.01,
       pH: parseFloat(pH) || 0.01,
       Tds: parseFloat(Conduct) || 0.01,
-      Turbidity: 0.01,
-      Nitrate: 0.01,
+      turbidity: 0.01,
+      nitrate: 0.01,
       timestamp: new Date(),
       lastUpdated: new Date().toISOString()
     };
@@ -150,7 +150,7 @@ var canSaveToFirestore = false;
 var count = 0;
 
 var latestValues = {
-  DO: null, Temp: null, pH: null, Conduct: null, time: null
+  Do: null, Temp: null, pH: null, Conduct: null, time: null
 };
 
 setInterval(() => {
@@ -167,9 +167,9 @@ setInterval(() => {
 
 app.post("/sensor-data", async (req, res) => {
   const rb = req.body;
-  const { DO, Temp, pH, Conduct } = obtainValues(rb);
+  const { Do, Temp, pH, Conduct } = obtainValues(rb);
 
-  latestValues.DO = DO;
+  latestValues.Do = Do;
   latestValues.Temp = Temp;
   latestValues.pH = pH;
   latestValues.Conduct = Conduct;
@@ -197,7 +197,7 @@ app.post("/sensor-data", async (req, res) => {
         range: `Sheet1!A:E`,
         valueInputOption: "USER_ENTERED",
         requestBody: {
-          values: [[timestamp, DO, Temp, pH, Conduct]],
+          values: [[timestamp, Do, Temp, pH, Conduct]],
         },
       })
       .then((res) => {
@@ -228,8 +228,8 @@ app.post("/sensor-data", async (req, res) => {
       valueInputOption: "USER_ENTERED",
       requestBody: {
         values: [
-          // [(new Date().toLocaleDateString()) + ' ' + (new Date().toLocaleTimeString()), DO, Temp, pH, Conduct]
-          [timestamp, DO, Temp, pH, Conduct],
+          // [(new Date().toLocaleDateString()) + ' ' + (new Date().toLocaleTimeString()), Do, Temp, pH, Conduct]
+          [timestamp, Do, Temp, pH, Conduct],
         ],
       },
     });
@@ -237,14 +237,14 @@ app.post("/sensor-data", async (req, res) => {
 
     if (true) {
       canSaveToFirestore = false;
-      await sendDataToFirestore(DO, Temp, pH, Conduct);
+      await sendDataToFirestore(Do, Temp, pH, Conduct);
       console.log("Firestore data sent:",new Date().toLocaleString(undefined, {
         timeZone: "Asia/Kolkata",
       }));
     }
 
     // Always update the 'ponds' document so the mobile app sees latest values immediately
-    await updatePondsCollection(DO, Temp, pH, Conduct);
+    await updatePondsCollection(Do, Temp, pH, Conduct);
 
     console.log(
       `🚀 ${new Date().toLocaleString(undefined, {
